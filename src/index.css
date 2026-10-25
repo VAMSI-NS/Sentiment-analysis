@@ -12,6 +12,36 @@
   }
 }
 
+@layer utilities {
+  .text-slate-400,
+  .text-slate-500 {
+    color: #475569;
+  }
+
+  .bg-slate-900 .text-slate-400 {
+    color: #cbd5e1;
+  }
+
+  .bg-slate-900 .text-slate-500 {
+    color: #94a3b8;
+  }
+
+  .text-emerald-500,
+  .text-emerald-600 {
+    color: #047857;
+  }
+
+  .text-rose-500,
+  .text-rose-600 {
+    color: #be123c;
+  }
+
+  .text-amber-500,
+  .text-amber-600 {
+    color: #92400e;
+  }
+}
+
 /* Custom scrollbars for clean SaaS UI */
 ::-webkit-scrollbar {
   width: 6px;
