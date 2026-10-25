@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+backend/.venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs
+build/
+dist/
+coverage/
+
+# Environment variables
+.env*
+!.env.example
+
+# OS and logs
+.DS_Store
+*.log
+
+# AI Studio / Playwright / Test artifacts
+.playwright-cli/
+reference_zip/
+public/assets/
+.aistudio/

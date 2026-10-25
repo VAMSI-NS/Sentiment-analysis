@@ -1,0 +1,19 @@
+text,label
+"The professor explains difficult concepts clearly",positive
+"The laboratory computers work well and are easy to use",positive
+"The library is quiet and the staff are helpful",positive
+"I enjoy practical sessions because they are engaging",positive
+"The faculty is supportive and answers our questions",positive
+"The course materials are organized and useful",positive
+"The classroom projector is broken",negative
+"The Wi-Fi disconnects during online classes",negative
+"The timetable changes too often and causes confusion",negative
+"The lab equipment is unavailable when we need it",negative
+"The assignment instructions are unclear",negative
+"The lecture started late and the room was noisy",negative
+"The course is okay overall",neutral
+"The timetable is manageable",neutral
+"The assignment was neither easy nor difficult",neutral
+"The lecture covered the planned topics",neutral
+"The classroom is average and has basic facilities",neutral
+"The course has some useful parts and some ordinary parts",neutral

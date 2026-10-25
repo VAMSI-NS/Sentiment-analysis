@@ -1,0 +1,6 @@
+{
+  "name": "FeedbackAI",
+  "description": "Student feedback sentiment analysis platform with real-time classification, CSV batch processing, model evaluation metrics, and modern SaaS dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
