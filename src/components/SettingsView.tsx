@@ -28,7 +28,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const isStaticGitHubPages = isGitHubPagesHost();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
-    success: boolean;
+    status: 'success' | 'error' | 'info';
     message: string;
     latency?: number;
     mode?: string;
@@ -51,6 +51,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleTestConnection = async () => {
+    if (isStaticGitHubPages && !apiUrl.trim()) {
+      setTestResult({
+        status: 'info',
+        message: 'No backend URL is configured. Deploy your FastAPI backend, enter its URL above, then save and test again.',
+      });
+      return;
+    }
+
     setTesting(true);
     setTestResult(null);
     const start = performance.now();
@@ -59,7 +67,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const health = await checkBackendHealth(apiUrl.trim());
       const latency = Math.round(performance.now() - start);
       setTestResult({
-        success: true,
+        status: 'success',
         message: `Connected successfully! Mode: ${health.mode}, Model Loaded: ${health.model_loaded ? 'Yes' : 'No'}`,
         latency,
         mode: health.mode,
@@ -68,7 +76,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     } catch (err: unknown) {
       const latency = Math.round(performance.now() - start);
       setTestResult({
-        success: false,
+        status: 'error',
         message: err instanceof Error ? err.message : 'Unable to connect to backend server.',
         latency,
       });
@@ -121,7 +129,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
               <button
                 onClick={handleReset}
-                title="Reset to Integrated Backend"
+                title={isStaticGitHubPages ? 'Clear API URL' : 'Reset to Integrated Backend'}
                 className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition-colors shrink-0 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -150,23 +158,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   ⚡ Integrated Server
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  setApiUrl('http://127.0.0.1:8000');
-                  setStoredApiUrl('http://127.0.0.1:8000');
-                  setSavedNotice(true);
-                  setTimeout(() => setSavedNotice(false), 2000);
-                  onRefreshHealth();
-                }}
-                className={`text-[11px] px-2.5 py-1 rounded-md border font-medium transition-colors ${
-                  apiUrl === 'http://127.0.0.1:8000'
-                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold'
-                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                🐍 Local Python FastAPI (127.0.0.1:8000)
-              </button>
+              {!isStaticGitHubPages && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiUrl('http://127.0.0.1:8000');
+                    setStoredApiUrl('http://127.0.0.1:8000');
+                    setSavedNotice(true);
+                    setTimeout(() => setSavedNotice(false), 2000);
+                    onRefreshHealth();
+                  }}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border font-medium transition-colors ${
+                    apiUrl === 'http://127.0.0.1:8000'
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  🐍 Local Python FastAPI (127.0.0.1:8000)
+                </button>
+              )}
             </div>
 
             <p className="text-[11px] text-slate-400 pt-1">
@@ -190,7 +200,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="text-xs font-bold text-slate-800">Connection Diagnostics</div>
               <div className="text-[11px] text-slate-500">
-                Ping the <code className="font-mono text-indigo-600">/health</code> endpoint to test latency.
+                {isStaticGitHubPages && !apiUrl.trim()
+                  ? 'Enter a deployed FastAPI URL to check its /health endpoint.'
+                  : <>Ping the <code className="font-mono text-indigo-600">/health</code> endpoint to test latency.</>}
               </div>
             </div>
             <button
@@ -216,18 +228,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {testResult && (
             <div
               className={`p-4 rounded-xl border text-xs space-y-1.5 ${
-                testResult.success
+                testResult.status === 'success'
                   ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
-                  : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                  : testResult.status === 'info'
+                    ? 'bg-blue-50 border-blue-200 text-blue-950'
+                    : 'bg-rose-50/80 border-rose-200 text-rose-950'
               }`}
             >
               <div className="flex items-center gap-2 font-bold">
-                {testResult.success ? (
+                {testResult.status === 'success' ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                ) : testResult.status === 'info' ? (
+                  <HelpCircle className="w-4 h-4 text-blue-700" />
                 ) : (
                   <XCircle className="w-4 h-4 text-rose-600" />
                 )}
-                <span>{testResult.success ? 'Backend Reachable' : 'Connection Failed'}</span>
+                <span>
+                  {testResult.status === 'success'
+                    ? 'Backend Reachable'
+                    : testResult.status === 'info'
+                      ? 'Backend URL Required'
+                      : 'Connection Failed'}
+                </span>
                 {testResult.latency !== undefined && (
                   <span className="font-mono font-normal text-[10px] bg-white/70 px-1.5 py-0.5 rounded border">
                     {testResult.latency} ms
