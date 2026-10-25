@@ -3,6 +3,10 @@ import { Prediction, BackendHealth } from './types';
 export const DEFAULT_API_BASE_URL = '';
 export const LOCAL_FASTAPI_URL = 'http://127.0.0.1:8000';
 
+export function isGitHubPagesHost(): boolean {
+  return typeof window !== 'undefined' && window.location.hostname.endsWith('.github.io');
+}
+
 export function getStoredApiUrl(): string {
   try {
     const custom = localStorage.getItem('feedbackai_api_url');
@@ -27,6 +31,9 @@ export function setStoredApiUrl(url: string): void {
 export async function checkBackendHealth(baseUrl?: string): Promise<BackendHealth> {
   const targetBase = baseUrl !== undefined ? baseUrl : getStoredApiUrl();
   const url = targetBase.replace(/\/+$/, '');
+  if (!url && isGitHubPagesHost()) {
+    throw new Error('GitHub Pages only hosts the frontend. Configure a deployed FastAPI URL to check backend health.');
+  }
   const endpoint = url ? `${url}/health` : '/health';
 
   const controller = new AbortController();

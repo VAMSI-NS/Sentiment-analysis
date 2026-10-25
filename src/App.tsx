@@ -1,24 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Page, Prediction, TrendPoint } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { OverviewView } from './components/OverviewView';
-import { AnalyzeView } from './components/AnalyzeView';
-import { BatchView } from './components/BatchView';
-import { EvaluationView } from './components/EvaluationView';
-import { SavedView } from './components/SavedView';
-import { SettingsView } from './components/SettingsView';
+const AnalyzeView = lazy(() => import('./components/AnalyzeView').then(({ AnalyzeView }) => ({ default: AnalyzeView })));
+const BatchView = lazy(() => import('./components/BatchView').then(({ BatchView }) => ({ default: BatchView })));
+const EvaluationView = lazy(() => import('./components/EvaluationView').then(({ EvaluationView }) => ({ default: EvaluationView })));
+const SavedView = lazy(() => import('./components/SavedView').then(({ SavedView }) => ({ default: SavedView })));
+const SettingsView = lazy(() => import('./components/SettingsView').then(({ SettingsView }) => ({ default: SettingsView })));
 import { INITIAL_PREDICTIONS, WEEKLY_TREND } from './utils/sampleData';
-import { checkBackendHealth } from './api';
+import { checkBackendHealth, getStoredApiUrl, isGitHubPagesHost } from './api';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('Overview');
   const [history, setHistory] = useState<Prediction[]>(INITIAL_PREDICTIONS);
-  const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>(() =>
+    isGitHubPagesHost() && !getStoredApiUrl().trim() ? 'offline' : 'checking',
+  );
   const [modelLoaded, setModelLoaded] = useState(false);
   const [trendData] = useState<TrendPoint[]>(WEEKLY_TREND);
 
   const fetchHealth = useCallback(async () => {
+    if (isGitHubPagesHost() && !getStoredApiUrl().trim()) {
+      setApiStatus('offline');
+      setModelLoaded(false);
+      return;
+    }
     setApiStatus('checking');
     try {
       const data = await checkBackendHealth();
@@ -76,37 +83,21 @@ export default function App() {
             />
           )}
 
-          {currentPage === 'Analyze Feedback' && (
-            <AnalyzeView
-              onSavePrediction={handleSavePrediction}
-              apiStatus={apiStatus}
-            />
-          )}
-
-          {currentPage === 'Batch Analysis' && <BatchView />}
-
-          {currentPage === 'Model Evaluation' && (
-            <EvaluationView
-              apiStatus={apiStatus}
-              modelLoaded={modelLoaded}
-            />
-          )}
-
-          {currentPage === 'Saved Analyses' && (
-            <SavedView
-              history={history}
-              onClearHistory={handleClearHistory}
-              onNavigate={setCurrentPage}
-            />
-          )}
-
-          {currentPage === 'Settings' && (
-            <SettingsView
-              apiStatus={apiStatus}
-              modelLoaded={modelLoaded}
-              onRefreshHealth={fetchHealth}
-            />
-          )}
+          <Suspense fallback={<div className="min-h-64" role="status">Loading view…</div>}>
+            {currentPage === 'Analyze Feedback' && (
+              <AnalyzeView onSavePrediction={handleSavePrediction} apiStatus={apiStatus} />
+            )}
+            {currentPage === 'Batch Analysis' && <BatchView />}
+            {currentPage === 'Model Evaluation' && (
+              <EvaluationView apiStatus={apiStatus} modelLoaded={modelLoaded} />
+            )}
+            {currentPage === 'Saved Analyses' && (
+              <SavedView history={history} onClearHistory={handleClearHistory} onNavigate={setCurrentPage} />
+            )}
+            {currentPage === 'Settings' && (
+              <SettingsView apiStatus={apiStatus} modelLoaded={modelLoaded} onRefreshHealth={fetchHealth} />
+            )}
+          </Suspense>
         </main>
 
         {/* Global Footer */}
