@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getStoredApiUrl, setStoredApiUrl, checkBackendHealth, DEFAULT_API_BASE_URL } from '../api';
+import { getStoredApiUrl, setStoredApiUrl, checkBackendHealth, DEFAULT_API_BASE_URL, isGitHubPagesHost } from '../api';
 import {
   Settings,
   Server,
@@ -25,6 +25,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onRefreshHealth,
 }) => {
   const [apiUrl, setApiUrl] = useState(getStoredApiUrl());
+  const isStaticGitHubPages = isGitHubPagesHost();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
     success: boolean;
@@ -108,7 +109,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
-                placeholder="Leave blank for Integrated Backend or http://127.0.0.1:8000"
+                placeholder={isStaticGitHubPages ? 'Enter your deployed FastAPI base URL' : 'Leave blank for Integrated Backend or http://127.0.0.1:8000'}
                 className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
               />
               <button
@@ -130,23 +131,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {/* Quick Presets */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-[11px] text-slate-400">Presets:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setApiUrl('');
-                  setStoredApiUrl('');
-                  setSavedNotice(true);
-                  setTimeout(() => setSavedNotice(false), 2000);
-                  onRefreshHealth();
-                }}
-                className={`text-[11px] px-2.5 py-1 rounded-md border font-medium transition-colors ${
-                  apiUrl === ''
-                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold'
-                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                ⚡ Integrated Server (Cloud Default)
-              </button>
+              {!isStaticGitHubPages && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiUrl('');
+                    setStoredApiUrl('');
+                    setSavedNotice(true);
+                    setTimeout(() => setSavedNotice(false), 2000);
+                    onRefreshHealth();
+                  }}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border font-medium transition-colors ${
+                    apiUrl === ''
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  ⚡ Integrated Server
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -167,9 +170,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-400 pt-1">
-              {apiUrl === ''
-                ? 'Currently using the full-stack server running directly with this app.'
-                : `Configured to connect to external endpoint: ${apiUrl}`}
+              {apiUrl.trim()
+                ? `Configured to connect to external endpoint: ${apiUrl}`
+                : isStaticGitHubPages
+                  ? 'GitHub Pages hosts the frontend only. Enter your deployed FastAPI backend URL to enable model predictions.'
+                  : 'Currently using the full-stack server running directly with this app.'}
             </p>
           </div>
 
