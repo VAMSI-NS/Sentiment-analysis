@@ -15,13 +15,9 @@ import {
 
 interface OverviewChartsProps {
   trendData: TrendPoint[];
+  sentimentCounts?: { positive: number; neutral: number; negative: number };
+  totalFeedback?: number;
 }
-
-const pieData = [
-  { name: 'Positive', value: 64, color: '#10b981' },
-  { name: 'Neutral', value: 23, color: '#94a3b8' },
-  { name: 'Negative', value: 13, color: '#f43f5e' },
-];
 
 const tooltipStyle = {
   backgroundColor: '#ffffff',
@@ -30,14 +26,23 @@ const tooltipStyle = {
   fontSize: '12px',
 };
 
-export default function OverviewCharts({ trendData }: OverviewChartsProps) {
+export default function OverviewCharts({ trendData, sentimentCounts, totalFeedback }: OverviewChartsProps) {
+  const counts = sentimentCounts ?? { positive: 64, neutral: 23, negative: 13 };
+  const total = totalFeedback ?? 1284;
+  const pieData = [
+    { name: 'Positive', value: counts.positive, color: '#10b981' },
+    { name: 'Neutral', value: counts.neutral, color: '#94a3b8' },
+    { name: 'Negative', value: counts.negative, color: '#f43f5e' },
+  ];
+  const percentage = (value: number) => total ? Math.round((value / total) * 100) : 0;
+
   return (
     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
           <div>
             <h2 className="text-base font-bold text-[#0f172a]">Sentiment Overview</h2>
-            <p className="text-xs text-slate-500">Illustrative weekly distribution across courses</p>
+            <p className="text-xs text-slate-500">{sentimentCounts ? 'Feedback submitted during the last 7 days' : 'Illustrative weekly distribution across courses'}</p>
           </div>
           <div className="flex items-center gap-3 text-xs font-medium">
             <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Positive</span>
@@ -74,7 +79,7 @@ export default function OverviewCharts({ trendData }: OverviewChartsProps) {
         <div>
           <div className="pb-3 border-b border-slate-100">
             <h2 className="text-base font-bold text-[#0f172a]">Sentiment Split</h2>
-            <p className="text-xs text-slate-500">Sample aggregated ratio</p>
+            <p className="text-xs text-slate-500">{sentimentCounts ? 'Distribution from saved submissions' : 'Sample aggregated ratio'}</p>
           </div>
           <div className="h-48 sm:h-52 relative flex items-center justify-center my-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -86,7 +91,7 @@ export default function OverviewCharts({ trendData }: OverviewChartsProps) {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-extrabold text-[#0f172a]">1,284</span>
+              <span className="text-xl font-extrabold text-[#0f172a]">{total.toLocaleString()}</span>
               <span className="text-[10px] text-slate-400 font-medium">Comments</span>
             </div>
           </div>
@@ -94,15 +99,15 @@ export default function OverviewCharts({ trendData }: OverviewChartsProps) {
         <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 text-center">
           <div className="bg-emerald-50/60 p-2 rounded-lg border border-emerald-100">
             <div className="text-[10px] text-emerald-700 font-medium">Positive</div>
-            <div className="text-sm font-bold text-emerald-800">64%</div>
+            <div className="text-sm font-bold text-emerald-800">{percentage(counts.positive)}%</div>
           </div>
           <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <div className="text-[10px] text-slate-600 font-medium">Neutral</div>
-            <div className="text-sm font-bold text-slate-800">23%</div>
+            <div className="text-sm font-bold text-slate-800">{percentage(counts.neutral)}%</div>
           </div>
           <div className="bg-rose-50/60 p-2 rounded-lg border border-rose-100">
             <div className="text-[10px] text-rose-700 font-medium">Negative</div>
-            <div className="text-sm font-bold text-rose-800">13%</div>
+            <div className="text-sm font-bold text-rose-800">{percentage(counts.negative)}%</div>
           </div>
         </div>
       </div>

@@ -11,6 +11,9 @@ import {
   ShieldCheck,
   Radio,
   ExternalLink,
+  ClipboardList,
+  Users,
+  LogOut,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,6 +22,7 @@ interface SidebarProps {
   apiStatus: 'online' | 'offline' | 'checking';
   modelLoaded: boolean;
   historyCount: number;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -27,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   apiStatus,
   modelLoaded,
   historyCount,
+  onLogout,
 }) => {
   const navItems: { id: Page; label: string; icon: React.ElementType; badge?: number | string }[] = [
     { id: 'Overview', label: 'Overview', icon: LayoutDashboard },
@@ -35,6 +40,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'Model Evaluation', label: 'Model Evaluation', icon: ChartNoAxesCombined },
     { id: 'Saved Analyses', label: 'Saved Analyses', icon: Activity, badge: historyCount > 0 ? historyCount : undefined },
     { id: 'Settings', label: 'Settings', icon: Settings },
+    { id: 'Feedback Management', label: 'Feedback Management', icon: ClipboardList },
+    { id: 'Registered Students', label: 'Students', icon: Users },
   ];
 
   return (
@@ -111,13 +118,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'bg-amber-100 text-amber-800'
               }`}
             >
-              {apiStatus === 'online' ? (modelLoaded ? 'Connected (Model)' : 'Connected') : apiStatus === 'checking' ? 'Checking' : 'Demo Fallback'}
+              {apiStatus === 'online' ? (modelLoaded ? 'Connected (Model)' : 'Demo Model') : apiStatus === 'checking' ? 'Checking' : 'Unavailable'}
             </span>
           </div>
           <p className="text-[11px] text-slate-500 leading-tight">
             {apiStatus === 'online'
               ? 'Backend API and inference engine online.'
-              : 'Using in-browser sentiment heuristic.'}
+              : 'Connect to the authenticated API to submit feedback.'}
           </p>
         </div>
 
@@ -128,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Capstone Ready</span>
           </div>
           <p className="text-[11px] text-indigo-700 leading-snug">
-            All demo predictions & metrics are clearly marked for academic compliance.
+            Analytics and submitted student feedback are loaded from the database.
           </p>
         </div>
 
@@ -142,6 +149,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Config <ExternalLink className="w-2.5 h-2.5" />
           </button>
         </div>
+        {onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sign out
+          </button>
+        )}
       </div>
     </aside>
   );

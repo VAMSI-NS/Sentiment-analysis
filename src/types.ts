@@ -1,7 +1,7 @@
 export type Sentiment = 'positive' | 'neutral' | 'negative';
 
 export interface Prediction {
-  id?: string;
+  id: string;
   text: string;
   sentiment: Sentiment;
   confidence: number;
@@ -17,13 +17,48 @@ export interface BackendHealth {
   timestamp?: string;
 }
 
+export type UserRole = 'student' | 'dean';
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  role: UserRole;
+  created_at: string;
+}
+
+export type FeedbackRecord = Omit<Prediction, 'id'> & {
+  id: number;
+  student_id: number;
+  student_email?: string;
+};
+
+export interface AdminSummary {
+  total_feedback: number;
+  total_students: number;
+  sentiment_counts: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  trend: TrendPoint[];
+}
+
+export interface StudentRecord {
+  id: number;
+  email: string;
+  created_at: string;
+  feedback_count: number;
+}
+
 export type Page =
   | 'Overview'
   | 'Analyze Feedback'
   | 'Batch Analysis'
   | 'Model Evaluation'
   | 'Saved Analyses'
-  | 'Settings';
+  | 'Settings'
+  | 'Feedback Management'
+  | 'Registered Students';
 
 export interface BatchItem {
   id: string;

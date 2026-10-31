@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Prediction } from '../types';
 import { SentimentBadge, SourceBadge } from './Badge';
 import { SUGGESTED_EXAMPLES } from '../utils/sampleData';
-import { classifySentiment, createDemoPrediction } from '../utils/sentiment';
+import { classifySentiment } from '../utils/sentiment';
 import { predictFeedback } from '../api';
 import {
   BrainCircuit,
@@ -17,10 +17,9 @@ import {
 
 interface AnalyzeViewProps {
   onSavePrediction: (pred: Prediction) => void;
-  apiStatus: 'online' | 'offline' | 'checking';
 }
 
-export const AnalyzeView: React.FC<AnalyzeViewProps> = ({ onSavePrediction, apiStatus }) => {
+export const AnalyzeView: React.FC<AnalyzeViewProps> = ({ onSavePrediction }) => {
   const [text, setText] = useState('');
   const [result, setResult] = useState<Prediction | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,33 +51,20 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({ onSavePrediction, apiS
     });
 
     try {
-      let pred: Prediction;
-      if (apiStatus === 'online') {
-        pred = await predictFeedback(trimmed);
-        setNotice({
-          text: pred.source === 'model'
-            ? 'Prediction calculated by the FastAPI trained scikit-learn model.'
-            : 'FastAPI connected; returned demo prediction response.',
-          type: 'success',
-        });
-      } else {
-        pred = createDemoPrediction(trimmed);
-        setNotice({
-          text: 'Backend offline: Generated via local browser sentiment heuristic.',
-          type: 'info',
-        });
-      }
+      const pred = await predictFeedback(trimmed);
+      setNotice({
+        text: pred.source === 'model'
+          ? 'Feedback analyzed and securely saved.'
+          : 'Feedback analyzed with the demo classifier and securely saved.',
+        type: 'success',
+      });
 
       setResult(pred);
       onSavePrediction(pred);
-    } catch {
-      // Graceful fallback to client demo heuristic
-      const fallbackPred = createDemoPrediction(trimmed);
-      setResult(fallbackPred);
-      onSavePrediction(fallbackPred);
+    } catch (requestError) {
       setNotice({
-        text: 'FastAPI unreachable: Classification computed via local browser heuristic.',
-        type: 'info',
+        text: requestError instanceof Error ? requestError.message : 'Feedback could not be saved. Please try again.',
+        type: 'error',
       });
     } finally {
       setBusy(false);
@@ -314,7 +300,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({ onSavePrediction, apiS
 
           {result && (
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Saved to Session History</span>
+              <span>Saved to your account</span>
               <span className="font-mono">{result.timestamp}</span>
             </div>
           )}

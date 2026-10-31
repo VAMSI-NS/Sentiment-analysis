@@ -12,6 +12,9 @@ import {
   Activity,
   Settings,
   Sparkles,
+  ClipboardList,
+  Users,
+  LogOut,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -20,6 +23,8 @@ interface HeaderProps {
   apiStatus: 'online' | 'offline' | 'checking';
   modelLoaded: boolean;
   historyCount: number;
+  userEmail?: string;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,6 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   apiStatus,
   modelLoaded,
   historyCount,
+  userEmail,
+  onLogout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -38,6 +45,8 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'Model Evaluation', label: 'Model Evaluation', icon: ChartNoAxesCombined },
     { id: 'Saved Analyses', label: 'Saved Analyses', icon: Activity },
     { id: 'Settings', label: 'Settings', icon: Settings },
+    { id: 'Feedback Management', label: 'Feedback Management', icon: ClipboardList },
+    { id: 'Registered Students', label: 'Students', icon: Users },
   ];
 
   const handleMobileNav = (page: Page) => {
@@ -67,6 +76,17 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right side: Live status pill & actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {userEmail && <span className="hidden lg:inline text-xs text-slate-500 max-w-48 truncate">{userEmail}</span>}
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign out
+            </button>
+          )}
           <div
             onClick={() => onSelectPage('Settings')}
             role="button"
@@ -86,8 +106,8 @@ export const Header: React.FC<HeaderProps> = ({
               {apiStatus === 'online'
                 ? modelLoaded
                   ? 'Backend Connected (Model Loaded)'
-                  : 'Backend Connected'
-                : 'Demo Mode (Client Heuristic)'}
+                  : 'Backend Connected (Demo Classifier)'
+                : 'Backend Unavailable'}
             </span>
           </div>
 
@@ -160,14 +180,26 @@ export const Header: React.FC<HeaderProps> = ({
               </nav>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-600">
-              <div className="flex items-center gap-1.5 font-semibold text-slate-800 mb-1">
-                <Radio className="w-3.5 h-3.5 text-indigo-600" />
-                Backend Integration
+            <div className="space-y-3">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-600">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-800 mb-1">
+                  <Radio className="w-3.5 h-3.5 text-indigo-600" />
+                  Backend Integration
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Sentiment analysis and administrative data are served by the authenticated FastAPI backend.
+                </p>
               </div>
-              <p className="text-[11px] text-slate-500">
-                Connects to FastAPI at <code className="font-mono">127.0.0.1:8000</code> with client-side fallback.
-              </p>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="w-full inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </button>
+              )}
             </div>
           </div>
           <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />

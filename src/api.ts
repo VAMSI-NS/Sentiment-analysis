@@ -1,4 +1,4 @@
-import { Prediction, BackendHealth } from './types';
+import { AdminSummary, AuthUser, BackendHealth, FeedbackRecord, Prediction, Sentiment, StudentRecord, UserRole } from './types';
 
 export const DEFAULT_API_BASE_URL = '';
 export const LOCAL_FASTAPI_URL = 'http://127.0.0.1:8000';
@@ -25,6 +25,92 @@ export function setStoredApiUrl(url: string): void {
   }
 }
 
+export async function apiRequest(path: string, init: RequestInit = {}): Promise<Response> {
+  const targetBase = getStoredApiUrl().trim().replace(/\/+$/, '');
+  const endpoint = `${targetBase}${path}`;
+  const response = await fetch(endpoint, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...init.headers,
+    },
+  });
+
+  if (!response.ok) {
+    let message = `Request failed (${response.status}).`;
+    try {
+      const error = await response.json();
+      if (typeof error.detail === 'string') message = error.detail;
+    } catch {
+      // Keep the HTTP status as the actionable error when the server does not return JSON.
+    }
+    throw new Error(message);
+  }
+
+  return response;
+}
+
+export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await apiRequest(path, init);
+  return response.json() as Promise<T>;
+}
+
+export function getCurrentUser(): Promise<AuthUser> {
+  return apiJson<AuthUser>('/api/auth/me');
+}
+
+export function login(email: string, password: string, role: UserRole): Promise<AuthUser> {
+  return apiJson<AuthUser>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, role }),
+  });
+}
+
+export function registerStudent(email: string, password: string): Promise<AuthUser> {
+  return apiJson<AuthUser>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function logout(): Promise<void> {
+  await apiRequest('/api/auth/logout', { method: 'POST' });
+}
+
+export function getMyFeedback(): Promise<Prediction[]> {
+  return apiJson<Array<Omit<Prediction, 'id'> & { id: number }>>('/api/feedback/mine')
+    .then((records) => records.map((record) => ({ ...record, id: String(record.id) })));
+}
+
+export function getAdminSummary(): Promise<AdminSummary> {
+  return apiJson<AdminSummary>('/api/admin/summary');
+}
+
+export function getAdminFeedback(options: {
+  search?: string;
+  sentiment?: Sentiment | 'all';
+  limit?: number;
+  offset?: number;
+} = {}): Promise<{ total: number; items: FeedbackRecord[] }> {
+  const query = new URLSearchParams();
+  if (options.search) query.set('search', options.search);
+  if (options.sentiment && options.sentiment !== 'all') query.set('sentiment', options.sentiment);
+  if (options.limit !== undefined) query.set('limit', String(options.limit));
+  if (options.offset !== undefined) query.set('offset', String(options.offset));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  return apiJson<{ total: number; items: FeedbackRecord[] }>(`/api/admin/feedback${suffix}`);
+}
+
+export function getAdminStudents(options: { limit?: number; offset?: number } = {}): Promise<{ total: number; items: StudentRecord[] }> {
+  const query = new URLSearchParams();
+  if (options.limit !== undefined) query.set('limit', String(options.limit));
+  if (options.offset !== undefined) query.set('offset', String(options.offset));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  return apiJson<{ total: number; items: StudentRecord[] }>(`/api/admin/students${suffix}`);
+}
+
 /**
  * Checks health of FastAPI or integrated backend.
  */
@@ -43,6 +129,7 @@ export async function checkBackendHealth(baseUrl?: string): Promise<BackendHealt
     const res = await fetch(endpoint, {
       method: 'GET',
       signal: controller.signal,
+      credentials: 'include',
       headers: {
         'Accept': 'application/json',
       },
@@ -82,6 +169,7 @@ export async function predictFeedback(text: string, baseUrl?: string): Promise<P
     const res = await fetch(endpoint, {
       method: 'POST',
       signal: controller.signal,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -99,11 +187,14 @@ export async function predictFeedback(text: string, baseUrl?: string): Promise<P
     const data = await res.json();
     return {
       id: `pred-api-${Date.now()}`,
+      ...(typeof data.id === 'number' ? { id: String(data.id) } : {}),
       text: data.text || text,
       sentiment: data.sentiment || 'neutral',
       confidence: typeof data.confidence === 'number' ? data.confidence : 0.70,
       source: data.source === 'model' ? 'model' : 'demo',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: data.timestamp
+        ? new Date(data.timestamp).toLocaleString()
+        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       wordCount: (text.match(/\S+/g) || []).length,
     };
   } catch (err: unknown) {

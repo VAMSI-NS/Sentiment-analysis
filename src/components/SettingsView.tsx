@@ -279,7 +279,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       : 'bg-amber-100 text-amber-800'
                   }`}
                 >
-                  {apiStatus === 'online' ? 'Online' : 'Offline (Demo Mode)'}
+                  {apiStatus === 'online' ? 'Online' : 'Offline'}
                 </span>
               </div>
 
@@ -330,7 +330,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Data Privacy & Security
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Student feedback is evaluated strictly within your active browser session or sent to your own local FastAPI endpoint. No data is stored externally.
+              Account credentials are stored as password hashes and feedback is retained in the configured backend database. Passwords are never returned to the frontend.
             </p>
           </div>
         </div>
